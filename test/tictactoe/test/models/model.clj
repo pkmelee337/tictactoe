@@ -1,6 +1,7 @@
 (ns tictactoe.test.models.model
   (:use tictactoe.models.model)
   (:use clojure.test)
+  (:use noir.util.test)
   (:require [tictactoe.test.models.testdata :as td]))
 
 (deftest get-board-cell-test
@@ -51,10 +52,25 @@
       (is (= (full-board? board) false)
           (str "Board should not be considered full, but is: " board)))))
 
-;; this test should be rewritten according to switch to Noir sessions
-#_(deftest scenario1-test
+;; exercise: add deftest for function winner?
+(deftest winner?-test
+  (let [testboard [[\X \O \O]
+                   [\- \X \-]
+                   [\- \- \X]]]
+    (is (winner? testboard \X))
+    (is (winner? testboard))))
+
+;; exercise: macro for defining test scenarios which resets game automatically at beginning and end
+(defmacro deftestreset [name & body]
+  `(deftest ~name
+     (with-noir
+	     (reset-game!)
+	     ~@body
+	     (reset-game!))))
+
+;; exercise: refactor scenario1-test using the macro
+(deftestreset scenario1-test
   "it should not be possible to choose a cell that is already taken"
-  (reset-game!)
   (play! 0 0)
   (is (= (get-board-cell 0 0) \X))
   (play! 0 1)
@@ -64,17 +80,58 @@
   (is (= (get-player) \O))
   (play! 0 0)
   (is (= (get-board-cell 0 0) \X) "value of cell 0 0 should still be X")
-  (is (= (get-player) \O) "player should still be O")
-  (reset-game!))
+  (is (= (get-player) \O) "player should still be O"))
 
-;; exercise: add deftest for function winner?
-;; exercise: macro for defining test scenarios which resets game automatically at beginning and end
-;; exercise: refactor scenario1-test using the macro
 ;; exercise: more scenario's
 ;;       - player X wins
 ;;       - player O wins
 ;;       - it's a draw
+(deftestreset playerXWins
+  (play! 0 0)
+  (is (= (get-board-cell 0 0) \X))
+  (play! 1 0)
+  (is (= (get-board-cell 1 0) \O))
+  (play! 0 1)
+  (is (= (get-board-cell 0 1) \X))
+  (play! 1 1)
+  (is (= (get-board-cell 1 1) \O))
+  (play! 0 2)
+  (is (= (get-board-cell 0 2) \X))
+  (is (= (winner?) \X) "Winner should be X"))
 
+(deftestreset playerOWins
+  (play! 0 0)
+  (is (= (get-board-cell 0 0) \X))
+  (play! 1 0)
+  (is (= (get-board-cell 1 0) \O))
+  (play! 0 1)
+  (is (= (get-board-cell 0 1) \X))
+  (play! 1 1)
+  (is (= (get-board-cell 1 1) \O))
+  (play! 2 0)
+  (is (= (get-board-cell 2 0) \X))
+  (play! 1 2)
+  (is (= (get-board-cell 1 2) \O))
+  (is (= (winner?) \O) "Winner should be O"))
 
-
-  
+(deftestreset draw
+  (play! 0 0)
+  (is (= (get-board-cell 0 0) \X))
+  (play! 1 0)
+  (is (= (get-board-cell 1 0) \O))
+  (play! 0 1)
+  (is (= (get-board-cell 0 1) \X))
+  (play! 1 1)
+  (is (= (get-board-cell 1 1) \O))
+  (play! 1 2)
+  (is (= (get-board-cell 1 2) \X))
+  (play! 0 2)
+  (is (= (get-board-cell 0 2) \O))
+  (play! 2 0)
+  (is (= (get-board-cell 2 0) \X))
+  (play! 2 1)
+  (is (= (get-board-cell 2 1) \O))
+  (play! 2 2)
+  (is (= (get-board-cell 2 2) \X))
+  (is (= (full-board?) true) "Board should be full")
+  (is (= (winner?) nil) "Should be a draw")) 
